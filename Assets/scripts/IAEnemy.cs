@@ -9,14 +9,23 @@ public class IAEnemy : MonoBehaviour
     enum State
     {
         Patrolling,
-        Chasing
+        Chasing,
+        Waiting,
+        Attacking
     }
 
     State currentState;
 
     NavMeshAgent enemyAgent;
 
+     private float waitTime = 5f;
+     float timer;
+    
     Transform playerTransform;
+
+    public List<Transform> pointList;
+
+    int currentPoint;
 
     [SerializeField] Transform patrolAreaCenter;
     [SerializeField] Vector2 patrolAreaSize;
@@ -27,7 +36,9 @@ public class IAEnemy : MonoBehaviour
     // Start is called before the first frame update
     void Awake()
     {
+        currentPoint = 0;
         enemyAgent = GetComponent<NavMeshAgent>();
+        enemyAgent.destination = pointList[currentPoint].position;
         playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
     }
 
@@ -47,11 +58,21 @@ public class IAEnemy : MonoBehaviour
             case State.Chasing:
                 Chase();
             break;
+
+            case State.Attacking:
+                Attack();
+            break;
+
+            case State.Waiting:
+                Waiting();
+            break;
         }
     }
 
     void Patrol()
     {
+        enemyAgent.destination = pointList[currentPoint].position;
+
         if(OnRange()== true)
         {
             currentState = State.Chasing;
@@ -59,7 +80,7 @@ public class IAEnemy : MonoBehaviour
 
         if(enemyAgent.remainingDistance < 0.5f)
         {
-            SetRandomPoint();
+            currentState = State.Waiting;
         }
     }
 
@@ -67,10 +88,47 @@ public class IAEnemy : MonoBehaviour
     {
         enemyAgent.destination = playerTransform.position;
 
+        if(enemyAgent.remainingDistance < 1.5f)
+        {
+            currentState = State.Attacking;
+        }
+
         if(OnRange() == false)
         {
             currentState = State.Patrolling;
         }
+    }
+
+    void Waiting()
+    {
+        timer += Time.deltaTime;
+
+         if(OnRange()== true)
+        {
+            currentState = State.Chasing;
+            timer = 0;
+        }
+
+        if(timer >= waitTime)
+        {
+            if(currentPoint < 3)
+            {
+                currentPoint++;
+            }
+            else
+            {
+                currentPoint = 0;
+            }
+
+            timer = 0;
+
+            currentState = State.Patrolling;
+        }
+    }
+
+    void Attack()
+    {
+        currentState = State.Chasing;   
     }
 
     void SetRandomPoint()
