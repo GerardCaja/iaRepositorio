@@ -128,6 +128,7 @@ public class IAEnemy : MonoBehaviour
 
     void Attack()
     {
+        Debug.Log("Te mato");
         currentState = State.Chasing;   
     }
 
